@@ -128,10 +128,10 @@ export default function LlmPromptChainsTable({ navigateTo, filter }: { navigateT
                 <Fragment key={r.id}>
                   <tr className="hover:bg-neutral-50 cursor-pointer" onClick={() => toggleExpand(r)}>
                     <td className="px-3 py-2 text-neutral-400 text-xs">{expandedId === r.id ? "v" : ">"}</td>
-                    <td className="px-3 py-2 text-neutral-500 font-mono text-xs">{r.id.slice(0, 8)}...</td>
+                    <td className="px-3 py-2 text-neutral-500 font-mono text-xs">{String(r.id).slice(0, 8)}...</td>
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       {r.caption_request_id ? (
-                        <FkLink label={r.caption_request_id.slice(0, 8) + "..."} id={r.caption_request_id} section="caption_requests" field="id" navigateTo={navigateTo} />
+                        <FkLink label={String(r.caption_request_id).slice(0, 8) + "..."} id={String(r.caption_request_id)} section="caption_requests" field="id" navigateTo={navigateTo} />
                       ) : "-"}
                     </td>
                     <td className="px-3 py-2 text-neutral-500 text-xs whitespace-nowrap">
@@ -152,7 +152,7 @@ export default function LlmPromptChainsTable({ navigateTo, filter }: { navigateT
                               {detailResponses.map((resp) => (
                                 <div key={resp.id} className="bg-white rounded-lg border border-neutral-200 p-3 space-y-2">
                                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-600">
-                                    <span>ID: <span className="font-mono">{resp.id.slice(0, 8)}...</span></span>
+                                    <span>ID: <span className="font-mono">{String(resp.id).slice(0, 8)}...</span></span>
                                     <span>Model: <span className="font-mono">{resp.llm_model_id ?? "-"}</span></span>
                                     <span>Flavor: <span className="font-mono">{resp.humor_flavor_id ?? "-"}</span></span>
                                     <span>Time: {resp.processing_time_seconds != null ? `${resp.processing_time_seconds.toFixed(2)}s` : "-"}</span>
