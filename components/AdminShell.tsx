@@ -161,8 +161,8 @@ export default function AdminShell({
   }
 
   return (
-    <div className="min-h-screen flex bg-neutral-50">
-      <aside className="w-56 bg-neutral-900 text-white flex flex-col shrink-0">
+    <div className="h-screen flex bg-neutral-50 overflow-hidden">
+      <aside className="w-56 bg-neutral-900 text-white flex flex-col shrink-0 h-screen sticky top-0">
         <div className="p-4 border-b border-neutral-700">
           <h1 className="text-lg font-bold tracking-tight">Crackd Admin</h1>
         </div>
@@ -198,7 +198,7 @@ export default function AdminShell({
         </div>
       </aside>
 
-      <main className="flex-1 p-6 overflow-auto">
+      <main className="flex-1 p-6 overflow-y-auto h-screen">
         {activeSection === "dashboard" && <Dashboard navigateTo={navigateTo} />}
         {activeSection === "profiles" && <ProfilesTable navigateTo={navigateTo} filter={filter} />}
         {activeSection === "images" && <ImagesTable navigateTo={navigateTo} filter={filter} />}
