@@ -6,14 +6,16 @@ import { createClient } from "@/lib/supabase/client";
 interface Profile {
   id: string;
   email: string;
-  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   is_superadmin: boolean;
-  is_enabled: boolean;
+  is_matrix_admin: boolean;
+  is_in_study: boolean;
   created_datetime_utc: string;
 }
 
 const PAGE_SIZE = 25;
-type SortField = "created_datetime_utc" | "email" | "is_superadmin" | "is_enabled";
+type SortField = "created_datetime_utc" | "email" | "is_superadmin";
 type SortDir = "asc" | "desc";
 
 export default function ProfilesTable() {
@@ -25,33 +27,33 @@ export default function ProfilesTable() {
   const [sortField, setSortField] = useState<SortField>("created_datetime_utc");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [filterAdmin, setFilterAdmin] = useState<"all" | "yes" | "no">("all");
-  const [filterEnabled, setFilterEnabled] = useState<"all" | "yes" | "no">("all");
+  const [error, setError] = useState<string | null>(null);
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
+    setError(null);
     const supabase = createClient();
 
     let query = supabase
       .from("profiles")
-      .select("id, email, full_name, is_superadmin, is_enabled, created_datetime_utc", { count: "exact" });
+      .select("id, email, first_name, last_name, is_superadmin, is_matrix_admin, is_in_study, created_datetime_utc", { count: "exact" });
 
     if (search.trim()) {
-      query = query.or(`email.ilike.%${search.trim()}%,full_name.ilike.%${search.trim()}%`);
+      query = query.or(`email.ilike.%${search.trim()}%,first_name.ilike.%${search.trim()}%,last_name.ilike.%${search.trim()}%`);
     }
     if (filterAdmin === "yes") query = query.eq("is_superadmin", true);
     if (filterAdmin === "no") query = query.eq("is_superadmin", false);
-    if (filterEnabled === "yes") query = query.eq("is_enabled", true);
-    if (filterEnabled === "no") query = query.eq("is_enabled", false);
 
-    const { data, count } = await query
+    const { data, count, error: err } = await query
       .order(sortField, { ascending: sortDir === "asc" })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
       .limit(PAGE_SIZE);
 
-    setProfiles(data ?? []);
+    if (err) setError(err.message);
+    setProfiles((data ?? []) as Profile[]);
     setTotal(count ?? 0);
     setLoading(false);
-  }, [page, search, sortField, sortDir, filterAdmin, filterEnabled]);
+  }, [page, search, sortField, sortDir, filterAdmin]);
 
   useEffect(() => { fetchProfiles(); }, [fetchProfiles]);
 
@@ -94,17 +96,14 @@ export default function ProfilesTable() {
           <option value="yes">Superadmin</option>
           <option value="no">Not admin</option>
         </select>
-        <select
-          value={filterEnabled}
-          onChange={(e) => { setFilterEnabled(e.target.value as "all" | "yes" | "no"); setPage(0); }}
-          className="text-xs border border-neutral-300 rounded-lg px-2 py-1.5 bg-white text-neutral-700"
-        >
-          <option value="all">All status</option>
-          <option value="yes">Enabled</option>
-          <option value="no">Disabled</option>
-        </select>
         <span className="text-xs text-neutral-400 ml-auto">{total} profiles</span>
       </div>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+          Note: RLS may limit visible profiles. {error}
+        </div>
+      )}
 
       <div className="bg-white rounded-lg border border-neutral-200 overflow-x-auto">
         <table className="w-full text-sm">
@@ -113,28 +112,36 @@ export default function ProfilesTable() {
               <SortHeader field="email">Email</SortHeader>
               <th className="text-left px-3 py-2 font-medium text-neutral-600">Name</th>
               <SortHeader field="is_superadmin">Admin</SortHeader>
-              <SortHeader field="is_enabled">Enabled</SortHeader>
+              <th className="text-left px-3 py-2 font-medium text-neutral-600">Matrix</th>
+              <th className="text-left px-3 py-2 font-medium text-neutral-600">In Study</th>
               <SortHeader field="created_datetime_utc">Created</SortHeader>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {loading ? (
-              <tr><td colSpan={5} className="px-3 py-4 text-neutral-500">Loading...</td></tr>
+              <tr><td colSpan={6} className="px-3 py-4 text-neutral-500">Loading...</td></tr>
             ) : profiles.length === 0 ? (
-              <tr><td colSpan={5} className="px-3 py-4 text-neutral-500">No profiles found.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-4 text-neutral-500">No profiles visible (RLS may restrict access).</td></tr>
             ) : (
               profiles.map((p) => (
                 <tr key={p.id} className="hover:bg-neutral-50">
-                  <td className="px-3 py-2 text-neutral-700">{p.email}</td>
-                  <td className="px-3 py-2 text-neutral-700">{p.full_name ?? "-"}</td>
+                  <td className="px-3 py-2 text-neutral-700 text-xs">{p.email}</td>
+                  <td className="px-3 py-2 text-neutral-700 text-xs">
+                    {[p.first_name, p.last_name].filter(Boolean).join(" ") || "-"}
+                  </td>
                   <td className="px-3 py-2">
                     <span className={p.is_superadmin ? "text-green-600 text-xs font-medium" : "text-neutral-400 text-xs"}>
                       {p.is_superadmin ? "Yes" : "No"}
                     </span>
                   </td>
                   <td className="px-3 py-2">
-                    <span className={p.is_enabled ? "text-green-600 text-xs font-medium" : "text-red-500 text-xs"}>
-                      {p.is_enabled ? "Yes" : "No"}
+                    <span className={p.is_matrix_admin ? "text-blue-600 text-xs font-medium" : "text-neutral-400 text-xs"}>
+                      {p.is_matrix_admin ? "Yes" : "No"}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className={p.is_in_study ? "text-purple-600 text-xs font-medium" : "text-neutral-400 text-xs"}>
+                      {p.is_in_study ? "Yes" : "No"}
                     </span>
                   </td>
                   <td className="px-3 py-2 text-neutral-500 text-xs whitespace-nowrap">
