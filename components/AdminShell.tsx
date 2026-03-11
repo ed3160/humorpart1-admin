@@ -6,19 +6,82 @@ import Dashboard from "./Dashboard";
 import ProfilesTable from "./ProfilesTable";
 import ImagesTable from "./ImagesTable";
 import CaptionsTable from "./CaptionsTable";
+import CaptionRequestsTable from "./CaptionRequestsTable";
+import CaptionExamplesTable from "./CaptionExamplesTable";
+import TermsTable from "./TermsTable";
+import HumorFlavorsTable from "./HumorFlavorsTable";
+import HumorFlavorStepsTable from "./HumorFlavorStepsTable";
+import HumorMixTable from "./HumorMixTable";
+import LlmProvidersTable from "./LlmProvidersTable";
+import LlmModelsTable from "./LlmModelsTable";
+import LlmPromptChainsTable from "./LlmPromptChainsTable";
+import LlmResponsesTable from "./LlmResponsesTable";
+import AllowedDomainsTable from "./AllowedDomainsTable";
+import WhitelistEmailsTable from "./WhitelistEmailsTable";
 
-type Section = "dashboard" | "profiles" | "images" | "captions";
+type Section =
+  | "dashboard"
+  | "profiles"
+  | "images"
+  | "captions"
+  | "caption_requests"
+  | "caption_examples"
+  | "terms"
+  | "humor_flavors"
+  | "flavor_steps"
+  | "humor_mix"
+  | "llm_providers"
+  | "llm_models"
+  | "prompt_chains"
+  | "llm_responses"
+  | "allowed_domains"
+  | "whitelist_emails";
 
 export interface NavFilter {
   field: string;
   value: string;
 }
 
-const navItems: { key: Section; label: string }[] = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "profiles", label: "Profiles" },
-  { key: "images", label: "Images" },
-  { key: "captions", label: "Captions" },
+interface NavGroup {
+  label: string;
+  items: { key: Section; label: string }[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: "",
+    items: [{ key: "dashboard", label: "Dashboard" }],
+  },
+  {
+    label: "Content",
+    items: [
+      { key: "profiles", label: "Profiles" },
+      { key: "images", label: "Images" },
+      { key: "captions", label: "Captions" },
+      { key: "caption_requests", label: "Caption Requests" },
+      { key: "caption_examples", label: "Caption Examples" },
+      { key: "terms", label: "Terms" },
+    ],
+  },
+  {
+    label: "AI Pipeline",
+    items: [
+      { key: "humor_flavors", label: "Humor Flavors" },
+      { key: "flavor_steps", label: "Flavor Steps" },
+      { key: "humor_mix", label: "Humor Mix" },
+      { key: "llm_providers", label: "LLM Providers" },
+      { key: "llm_models", label: "LLM Models" },
+      { key: "prompt_chains", label: "Prompt Chains" },
+      { key: "llm_responses", label: "LLM Responses" },
+    ],
+  },
+  {
+    label: "Access",
+    items: [
+      { key: "allowed_domains", label: "Allowed Domains" },
+      { key: "whitelist_emails", label: "Whitelisted Emails" },
+    ],
+  },
 ];
 
 export default function AdminShell({
@@ -48,8 +111,8 @@ export default function AdminShell({
     checkAdmin();
   }, [userId, userEmail]);
 
-  const navigateTo = useCallback((section: Section, navFilter?: NavFilter) => {
-    setActiveSection(section);
+  const navigateTo = useCallback((section: string, navFilter?: NavFilter) => {
+    setActiveSection(section as Section);
     setFilter(navFilter ?? null);
   }, []);
 
@@ -103,19 +166,28 @@ export default function AdminShell({
         <div className="p-4 border-b border-neutral-700">
           <h1 className="text-lg font-bold tracking-tight">Crackd Admin</h1>
         </div>
-        <nav className="flex-1 p-2">
-          {navItems.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => navigateTo(item.key)}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                activeSection === item.key
-                  ? "bg-neutral-700 text-white"
-                  : "text-neutral-400 hover:text-white hover:bg-neutral-800"
-              }`}
-            >
-              {item.label}
-            </button>
+        <nav className="flex-1 p-2 overflow-y-auto">
+          {navGroups.map((group) => (
+            <div key={group.label || "top"}>
+              {group.label && (
+                <div className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                  {group.label}
+                </div>
+              )}
+              {group.items.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => navigateTo(item.key)}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                    activeSection === item.key
+                      ? "bg-neutral-700 text-white"
+                      : "text-neutral-400 hover:text-white hover:bg-neutral-800"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="p-4 border-t border-neutral-700">
@@ -131,6 +203,18 @@ export default function AdminShell({
         {activeSection === "profiles" && <ProfilesTable navigateTo={navigateTo} filter={filter} />}
         {activeSection === "images" && <ImagesTable navigateTo={navigateTo} filter={filter} />}
         {activeSection === "captions" && <CaptionsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "caption_requests" && <CaptionRequestsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "caption_examples" && <CaptionExamplesTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "terms" && <TermsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "humor_flavors" && <HumorFlavorsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "flavor_steps" && <HumorFlavorStepsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "humor_mix" && <HumorMixTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "llm_providers" && <LlmProvidersTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "llm_models" && <LlmModelsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "prompt_chains" && <LlmPromptChainsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "llm_responses" && <LlmResponsesTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "allowed_domains" && <AllowedDomainsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "whitelist_emails" && <WhitelistEmailsTable navigateTo={navigateTo} filter={filter} />}
       </main>
     </div>
   );

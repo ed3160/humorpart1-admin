@@ -18,7 +18,7 @@ interface ProfileInfo {
   vote_count: number;
 }
 
-export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (section: "profiles" | "images" | "captions", filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
   const [profiles, setProfiles] = useState<ProfileInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

@@ -48,7 +48,7 @@ const STEP_LABELS: Record<UploadStep, string> = {
 type SortField = "created_datetime_utc" | "is_public";
 type SortDir = "asc" | "desc";
 
-export default function ImagesTable({ navigateTo, filter }: { navigateTo: (section: "profiles" | "images" | "captions", filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function ImagesTable({ navigateTo, filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
   const [images, setImages] = useState<ImageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);

@@ -2,8 +2,6 @@
 
 import type { NavFilter } from "./AdminShell";
 
-type Section = "profiles" | "images" | "captions";
-
 export default function FkLink({
   label,
   id,
@@ -13,9 +11,9 @@ export default function FkLink({
 }: {
   label: string;
   id: string;
-  section: Section;
+  section: string;
   field: string;
-  navigateTo: (section: Section, filter?: NavFilter) => void;
+  navigateTo: (section: string, filter?: NavFilter) => void;
 }) {
   return (
     <button
