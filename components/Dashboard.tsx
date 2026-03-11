@@ -31,7 +31,7 @@ interface MostCaptionedImage {
   captionCount: number;
 }
 
-export default function Dashboard({ navigateTo }: { navigateTo: (section: "profiles" | "images" | "captions", filter?: NavFilter) => void }) {
+export default function Dashboard({ navigateTo }: { navigateTo: (section: string, filter?: NavFilter) => void }) {
   const [stats, setStats] = useState<Stats>({ images: 0, captions: 0, profiles: 0, votes: 0 });
   const [recentCaptions, setRecentCaptions] = useState<RecentCaption[]>([]);
   const [recentImageUrls, setRecentImageUrls] = useState<Record<string, string>>({});

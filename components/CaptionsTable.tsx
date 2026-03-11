@@ -31,7 +31,7 @@ const PAGE_SIZE = 25;
 type SortField = "created_datetime_utc" | "is_public";
 type SortDir = "asc" | "desc";
 
-export default function CaptionsTable({ navigateTo, filter }: { navigateTo: (section: "profiles" | "images" | "captions", filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function CaptionsTable({ navigateTo, filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
