@@ -35,7 +35,7 @@ export default function Dashboard() {
           supabase.from("images").select("*", { count: "exact", head: true }),
           supabase.from("captions").select("*", { count: "exact", head: true }),
           supabase.from("profiles").select("*", { count: "exact", head: true }),
-          supabase.from("votes").select("*", { count: "exact", head: true }),
+          supabase.from("caption_votes").select("*", { count: "exact", head: true }),
           supabase
             .from("captions")
             .select("id, content, created_datetime_utc")
