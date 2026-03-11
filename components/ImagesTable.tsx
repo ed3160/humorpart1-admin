@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, Fragment } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { NavFilter } from "./AdminShell";
 import FkLink from "./FkLink";
@@ -11,6 +11,24 @@ interface ImageRow {
   profile_id: string;
   is_public: boolean;
   created_datetime_utc: string;
+  image_description: string | null;
+  additional_context: string | null;
+  celebrity_recognition: string | null;
+  is_common_use: boolean | null;
+}
+
+interface CaptionDetail {
+  id: string;
+  content: string;
+  humor_flavor_id: string | null;
+  like_count: number | null;
+  is_featured: boolean | null;
+  created_datetime_utc: string;
+}
+
+interface VoteRow {
+  caption_id: string;
+  vote_value: number;
 }
 
 const API_BASE = "https://api.almostcrackd.ai";
@@ -61,13 +79,19 @@ export default function ImagesTable({ navigateTo, filter }: { navigateTo: (secti
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // Expandable detail row
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [detailCaptions, setDetailCaptions] = useState<CaptionDetail[]>([]);
+  const [detailVotes, setDetailVotes] = useState<Record<string, { up: number; down: number }>>({});
+  const [detailLoading, setDetailLoading] = useState(false);
+
   const fetchImages = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
 
     let query = supabase
       .from("images")
-      .select("id, url, profile_id, is_public, created_datetime_utc", { count: "exact" })
+      .select("id, url, profile_id, is_public, created_datetime_utc, image_description, additional_context, celebrity_recognition, is_common_use", { count: "exact" })
       .order(sortField, { ascending: sortDir === "asc" });
 
     if (filterPublic === "yes") query = query.eq("is_public", true);
@@ -84,6 +108,52 @@ export default function ImagesTable({ navigateTo, filter }: { navigateTo: (secti
   }, [page, sortField, sortDir, filterPublic, filter]);
 
   useEffect(() => { fetchImages(); }, [fetchImages]);
+
+  const fetchDetail = useCallback(async (imageId: string) => {
+    setDetailLoading(true);
+    setDetailCaptions([]);
+    setDetailVotes({});
+    const supabase = createClient();
+
+    // Fetch captions for this image
+    const { data: caps } = await supabase
+      .from("captions")
+      .select("id, content, humor_flavor_id, like_count, is_featured, created_datetime_utc")
+      .eq("image_id", imageId)
+      .not("content", "is", null)
+      .order("created_datetime_utc", { ascending: false });
+
+    const captionsList = caps ?? [];
+    setDetailCaptions(captionsList);
+
+    // Fetch votes for those captions
+    if (captionsList.length > 0) {
+      const captionIds = captionsList.map((c) => c.id);
+      const { data: votes } = await supabase
+        .from("caption_votes")
+        .select("caption_id, vote_value")
+        .in("caption_id", captionIds);
+
+      const voteSummary: Record<string, { up: number; down: number }> = {};
+      for (const v of (votes ?? []) as VoteRow[]) {
+        if (!voteSummary[v.caption_id]) voteSummary[v.caption_id] = { up: 0, down: 0 };
+        if (v.vote_value === 1) voteSummary[v.caption_id].up++;
+        else if (v.vote_value === -1) voteSummary[v.caption_id].down++;
+      }
+      setDetailVotes(voteSummary);
+    }
+
+    setDetailLoading(false);
+  }, []);
+
+  const toggleExpand = (id: string) => {
+    if (expandedId === id) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(id);
+      fetchDetail(id);
+    }
+  };
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -269,6 +339,7 @@ export default function ImagesTable({ navigateTo, filter }: { navigateTo: (secti
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-neutral-50 border-b border-neutral-200">
+              <th className="text-left px-3 py-2 font-medium text-neutral-600 w-6"></th>
               <th className="text-left px-3 py-2 font-medium text-neutral-600">Image</th>
               <th className="text-left px-3 py-2 font-medium text-neutral-600">URL</th>
               <th className="text-left px-3 py-2 font-medium text-neutral-600">Profile</th>
@@ -278,6 +349,7 @@ export default function ImagesTable({ navigateTo, filter }: { navigateTo: (secti
               >
                 Public{sortIcon("is_public")}
               </th>
+              <th className="text-left px-3 py-2 font-medium text-neutral-600">Common</th>
               <th
                 className="text-left px-3 py-2 font-medium text-neutral-600 cursor-pointer hover:text-neutral-900 select-none"
                 onClick={() => toggleSort("created_datetime_utc")}
@@ -289,73 +361,170 @@ export default function ImagesTable({ navigateTo, filter }: { navigateTo: (secti
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {loading ? (
-              <tr><td colSpan={6} className="px-3 py-4 text-neutral-500">Loading...</td></tr>
+              <tr><td colSpan={8} className="px-3 py-4 text-neutral-500">Loading...</td></tr>
             ) : images.length === 0 ? (
-              <tr><td colSpan={6} className="px-3 py-4 text-neutral-500">No images found.</td></tr>
+              <tr><td colSpan={8} className="px-3 py-4 text-neutral-500">No images found.</td></tr>
             ) : (
               images.map((img) => (
-                <tr key={img.id} className="hover:bg-neutral-50">
-                  <td className="px-3 py-2">
-                    {img.url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={img.url}
-                        alt=""
-                        className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setPreviewImg(img)}
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center text-neutral-400 text-xs">N/A</div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2">
-                    {editId === img.id ? (
-                      <input
-                        type="text"
-                        value={editUrl}
-                        onChange={(e) => setEditUrl(e.target.value)}
-                        className="border border-neutral-300 rounded px-2 py-1 text-sm w-full"
-                      />
-                    ) : (
-                      <span className="text-neutral-700 truncate block max-w-[200px]" title={img.url}>{img.url}</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2">
-                    {img.profile_id ? (
-                      <FkLink label={img.profile_id.slice(0, 8) + "..."} id={img.profile_id} section="profiles" field="id" navigateTo={navigateTo} />
-                    ) : "-"}
-                  </td>
-                  <td className="px-3 py-2">
-                    {editId === img.id ? (
-                      <input type="checkbox" checked={editIsPublic} onChange={(e) => setEditIsPublic(e.target.checked)} />
-                    ) : (
-                      <span className={img.is_public ? "text-green-600 text-xs font-medium" : "text-neutral-400 text-xs"}>
-                        {img.is_public ? "Yes" : "No"}
+                <Fragment key={img.id}>
+                  <tr className="hover:bg-neutral-50 cursor-pointer" onClick={() => toggleExpand(img.id)}>
+                    <td className="px-3 py-2 text-neutral-400 text-xs">
+                      {expandedId === img.id ? "v" : ">"}
+                    </td>
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      {img.url ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={img.url}
+                          alt=""
+                          className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setPreviewImg(img)}
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center text-neutral-400 text-xs">N/A</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {editId === img.id ? (
+                        <input
+                          type="text"
+                          value={editUrl}
+                          onChange={(e) => setEditUrl(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="border border-neutral-300 rounded px-2 py-1 text-sm w-full"
+                        />
+                      ) : (
+                        <span className="text-neutral-700 truncate block max-w-[200px]" title={img.url}>{img.url}</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      {img.profile_id ? (
+                        <FkLink label={img.profile_id.slice(0, 8) + "..."} id={img.profile_id} section="profiles" field="id" navigateTo={navigateTo} />
+                      ) : "-"}
+                    </td>
+                    <td className="px-3 py-2">
+                      {editId === img.id ? (
+                        <input type="checkbox" checked={editIsPublic} onChange={(e) => setEditIsPublic(e.target.checked)} onClick={(e) => e.stopPropagation()} />
+                      ) : (
+                        <span className={img.is_public ? "text-green-600 text-xs font-medium" : "text-neutral-400 text-xs"}>
+                          {img.is_public ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={img.is_common_use ? "text-green-600 text-xs font-medium" : "text-neutral-400 text-xs"}>
+                        {img.is_common_use ? "Yes" : "No"}
                       </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-neutral-500 text-xs whitespace-nowrap">
-                    {new Date(img.created_datetime_utc).toLocaleDateString()}
-                  </td>
-                  <td className="px-3 py-2">
-                    {editId === img.id ? (
-                      <div className="flex gap-2">
-                        <button onClick={() => handleUpdate(img.id)} className="text-xs text-green-600 hover:underline cursor-pointer">Save</button>
-                        <button onClick={() => setEditId(null)} className="text-xs text-neutral-400 hover:underline cursor-pointer">Cancel</button>
-                      </div>
-                    ) : deleteId === img.id ? (
-                      <div className="flex gap-2">
-                        <button onClick={() => handleDelete(img.id)} className="text-xs text-red-600 hover:underline cursor-pointer">Confirm</button>
-                        <button onClick={() => setDeleteId(null)} className="text-xs text-neutral-400 hover:underline cursor-pointer">Cancel</button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <button onClick={() => startEdit(img)} className="text-xs text-blue-600 hover:underline cursor-pointer">Edit</button>
-                        <button onClick={() => setDeleteId(img.id)} className="text-xs text-red-500 hover:underline cursor-pointer">Delete</button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-3 py-2 text-neutral-500 text-xs whitespace-nowrap">
+                      {new Date(img.created_datetime_utc).toLocaleDateString()}
+                    </td>
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      {editId === img.id ? (
+                        <div className="flex gap-2">
+                          <button onClick={() => handleUpdate(img.id)} className="text-xs text-green-600 hover:underline cursor-pointer">Save</button>
+                          <button onClick={() => setEditId(null)} className="text-xs text-neutral-400 hover:underline cursor-pointer">Cancel</button>
+                        </div>
+                      ) : deleteId === img.id ? (
+                        <div className="flex gap-2">
+                          <button onClick={() => handleDelete(img.id)} className="text-xs text-red-600 hover:underline cursor-pointer">Confirm</button>
+                          <button onClick={() => setDeleteId(null)} className="text-xs text-neutral-400 hover:underline cursor-pointer">Cancel</button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button onClick={() => startEdit(img)} className="text-xs text-blue-600 hover:underline cursor-pointer">Edit</button>
+                          <button onClick={() => setDeleteId(img.id)} className="text-xs text-red-500 hover:underline cursor-pointer">Delete</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* Expanded detail row */}
+                  {expandedId === img.id && (
+                    <tr>
+                      <td colSpan={8} className="p-0">
+                        <div className="bg-neutral-50 border-t border-neutral-200 p-5">
+                          {detailLoading ? (
+                            <p className="text-sm text-neutral-500">Loading details...</p>
+                          ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                              {/* Left: Image preview */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Preview</h4>
+                                {img.url ? (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img src={img.url} alt="" className="w-[200px] h-[200px] object-cover rounded-lg" />
+                                ) : (
+                                  <div className="w-[200px] h-[200px] bg-neutral-200 rounded-lg flex items-center justify-center text-neutral-400 text-sm">No image</div>
+                                )}
+                                <p className="text-xs text-neutral-400 mt-2 font-mono break-all">{img.id}</p>
+                              </div>
+
+                              {/* Middle: Metadata */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Metadata</h4>
+                                <div>
+                                  <span className="text-xs font-medium text-neutral-500">Description</span>
+                                  <p className="text-sm text-neutral-800 mt-0.5">{img.image_description || <span className="text-neutral-400 italic">None</span>}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs font-medium text-neutral-500">Additional Context</span>
+                                  <p className="text-sm text-neutral-800 mt-0.5">{img.additional_context || <span className="text-neutral-400 italic">None</span>}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs font-medium text-neutral-500">Celebrity Recognition</span>
+                                  <p className="text-sm text-neutral-800 mt-0.5">{img.celebrity_recognition || <span className="text-neutral-400 italic">None</span>}</p>
+                                </div>
+                                <div className="flex gap-4">
+                                  <div>
+                                    <span className="text-xs font-medium text-neutral-500">Public</span>
+                                    <p className="text-sm text-neutral-800">{img.is_public ? "Yes" : "No"}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-xs font-medium text-neutral-500">Common Use</span>
+                                    <p className="text-sm text-neutral-800">{img.is_common_use ? "Yes" : "No"}</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Right: Captions */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
+                                  Captions ({detailCaptions.length})
+                                </h4>
+                                {detailCaptions.length === 0 ? (
+                                  <p className="text-sm text-neutral-400 italic">No captions for this image.</p>
+                                ) : (
+                                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                                    {detailCaptions.map((cap) => {
+                                      const votes = detailVotes[cap.id];
+                                      return (
+                                        <div key={cap.id} className="bg-white rounded-lg border border-neutral-200 p-3 text-sm">
+                                          <p className="text-neutral-800 mb-2">{cap.content}</p>
+                                          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-500">
+                                            {cap.humor_flavor_id && <span>Flavor: <span className="font-mono">{cap.humor_flavor_id.slice(0, 8)}...</span></span>}
+                                            <span>Likes: {cap.like_count ?? 0}</span>
+                                            <span>Featured: {cap.is_featured ? "Yes" : "No"}</span>
+                                            {votes && (
+                                              <span className="text-neutral-600">
+                                                Votes: <span className="text-green-600">+{votes.up}</span> / <span className="text-red-500">-{votes.down}</span>
+                                              </span>
+                                            )}
+                                            <span>{new Date(cap.created_datetime_utc).toLocaleDateString()}</span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))
             )}
           </tbody>
