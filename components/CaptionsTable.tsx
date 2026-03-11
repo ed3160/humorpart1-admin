@@ -12,7 +12,7 @@ interface Caption {
   profile_id: string;
   is_public: boolean;
   created_datetime_utc: string;
-  humor_flavor_id: string | null;
+  humor_flavor_id: number | null;
   like_count: number | null;
   is_featured: boolean | null;
   caption_request_id: string | null;
@@ -165,14 +165,14 @@ export default function CaptionsTable({ navigateTo, filter }: { navigateTo: (sec
               <th className="text-left px-3 py-2 font-medium text-neutral-600">Flavor</th>
               <th className="text-left px-3 py-2 font-medium text-neutral-600">Likes</th>
               <th
-                className="text-left px-3 py-2 font-medium text-neutral-600 cursor-pointer hover:text-neutral-900 select-none"
+                className="text-left px-3 py-2 font-medium text-neutral-600 cursor-pointer hover:text-neutral-900 select-none whitespace-nowrap"
                 onClick={() => toggleSort("is_public")}
               >
                 Public{sortIcon("is_public")}
               </th>
               <th className="text-left px-3 py-2 font-medium text-neutral-600">Featured</th>
               <th
-                className="text-left px-3 py-2 font-medium text-neutral-600 cursor-pointer hover:text-neutral-900 select-none"
+                className="text-left px-3 py-2 font-medium text-neutral-600 cursor-pointer hover:text-neutral-900 select-none whitespace-nowrap"
                 onClick={() => toggleSort("created_datetime_utc")}
               >
                 Created{sortIcon("created_datetime_utc")}
@@ -199,7 +199,7 @@ export default function CaptionsTable({ navigateTo, filter }: { navigateTo: (sec
                       {c.profile_id ? <FkLink label={c.profile_id.slice(0, 8) + "..."} id={c.profile_id} section="profiles" field="id" navigateTo={navigateTo} /> : "-"}
                     </td>
                     <td className="px-3 py-2 text-xs text-neutral-500 font-mono">
-                      {c.humor_flavor_id ? c.humor_flavor_id.slice(0, 8) + "..." : "-"}
+                      {c.humor_flavor_id ?? "-"}
                     </td>
                     <td className="px-3 py-2 text-xs text-neutral-600">{c.like_count ?? 0}</td>
                     <td className="px-3 py-2">

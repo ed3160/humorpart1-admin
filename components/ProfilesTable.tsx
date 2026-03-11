@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, Fragment } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { NavFilter } from "./AdminShell";
 
@@ -24,6 +24,41 @@ export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (sec
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [mode, setMode] = useState<"direct" | "derived">("direct");
+
+  // Expandable detail
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [detailImages, setDetailImages] = useState<{ id: string; url: string }[]>([]);
+  const [detailCaptions, setDetailCaptions] = useState<{ id: string; content: string; image_id: string }[]>([]);
+  const [detailVoteCount, setDetailVoteCount] = useState(0);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const fetchDetail = useCallback(async (profileId: string) => {
+    setDetailLoading(true);
+    setDetailImages([]);
+    setDetailCaptions([]);
+    setDetailVoteCount(0);
+    const supabase = createClient();
+
+    const [imgRes, capRes, voteRes] = await Promise.all([
+      supabase.from("images").select("id, url").eq("profile_id", profileId).order("created_datetime_utc", { ascending: false }).limit(6),
+      supabase.from("captions").select("id, content, image_id").eq("profile_id", profileId).not("content", "is", null).order("created_datetime_utc", { ascending: false }).limit(5),
+      supabase.from("caption_votes").select("id", { count: "exact", head: true }).eq("profile_id", profileId),
+    ]);
+
+    setDetailImages((imgRes.data ?? []) as { id: string; url: string }[]);
+    setDetailCaptions((capRes.data ?? []) as { id: string; content: string; image_id: string }[]);
+    setDetailVoteCount(voteRes.count ?? 0);
+    setDetailLoading(false);
+  }, []);
+
+  const toggleExpand = (profileId: string) => {
+    if (expandedId === profileId) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(profileId);
+      fetchDetail(profileId);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -152,6 +187,7 @@ export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (sec
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-neutral-50 border-b border-neutral-200">
+              <th className="text-left px-3 py-2 font-medium text-neutral-600 w-6"></th>
               <th className="text-left px-3 py-2 font-medium text-neutral-600">ID</th>
               {mode === "direct" && (
                 <>
@@ -173,7 +209,9 @@ export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (sec
               <tr><td colSpan={8} className="px-3 py-4 text-neutral-500">No profiles found.</td></tr>
             ) : (
               paginated.map((p) => (
-                <tr key={p.id} className="hover:bg-neutral-50">
+                <Fragment key={p.id}>
+                <tr className="hover:bg-neutral-50 cursor-pointer" onClick={() => toggleExpand(p.id)}>
+                  <td className="px-3 py-2 text-neutral-400 text-xs">{expandedId === p.id ? "v" : ">"}</td>
                   <td className="px-3 py-2 font-mono text-xs text-neutral-600" title={p.id}>
                     {p.id.slice(0, 8)}...
                   </td>
@@ -205,6 +243,61 @@ export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (sec
                   </td>
                   <td className="px-3 py-2 text-neutral-700 text-xs tabular-nums">{p.vote_count}</td>
                 </tr>
+                {expandedId === p.id && (
+                  <tr>
+                    <td colSpan={mode === "direct" ? 9 : 5} className="p-0">
+                      <div className="bg-neutral-50 border-t border-neutral-200 p-5">
+                        {detailLoading ? (
+                          <p className="text-sm text-neutral-500">Loading...</p>
+                        ) : (
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div>
+                              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Recent Images ({detailImages.length})</h4>
+                              {detailImages.length === 0 ? (
+                                <p className="text-xs text-neutral-400">No images</p>
+                              ) : (
+                                <div className="grid grid-cols-3 gap-2">
+                                  {detailImages.map((img) => (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img key={img.id} src={img.url} alt="" className="w-full aspect-square object-cover rounded-lg" />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Recent Captions ({detailCaptions.length})</h4>
+                              {detailCaptions.length === 0 ? (
+                                <p className="text-xs text-neutral-400">No captions</p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {detailCaptions.map((cap) => (
+                                    <div key={cap.id} className="bg-white rounded-lg border border-neutral-200 p-2.5">
+                                      <p className="text-xs text-neutral-700">{cap.content}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Summary</h4>
+                              <div className="bg-white rounded-lg border border-neutral-200 p-4 space-y-3">
+                                <div className="flex justify-between">
+                                  <span className="text-xs text-neutral-500">Profile ID</span>
+                                  <span className="text-xs font-mono text-neutral-700">{p.id}</span>
+                                </div>
+                                {p.email && <div className="flex justify-between"><span className="text-xs text-neutral-500">Email</span><span className="text-xs text-neutral-700">{p.email}</span></div>}
+                                <div className="flex justify-between"><span className="text-xs text-neutral-500">Images</span><span className="text-xs font-semibold text-neutral-700">{p.image_count}</span></div>
+                                <div className="flex justify-between"><span className="text-xs text-neutral-500">Captions</span><span className="text-xs font-semibold text-neutral-700">{p.caption_count}</span></div>
+                                <div className="flex justify-between"><span className="text-xs text-neutral-500">Total Votes Cast</span><span className="text-xs font-semibold text-neutral-700">{detailVoteCount}</span></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))
             )}
           </tbody>
