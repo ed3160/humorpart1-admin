@@ -57,21 +57,35 @@ export default function AdminShell({
   }
 
   if (!isSuperadmin) {
+    const supabaseLink = `https://supabase.com/dashboard/project/qihsgnfjqmkjmoowyfbn/editor/35885?schema=public&sort=is_superadmin%3Aasc&filter=email%3Aeq%3A${encodeURIComponent(userEmail)}`;
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
           <h1 className="text-xl font-bold text-neutral-900 mb-2">
             Access Denied
           </h1>
-          <p className="text-neutral-500 mb-4">
-            You do not have superadmin privileges.
+          <p className="text-neutral-600 text-sm mb-4">
+            Your account ({userEmail}) does not have superadmin privileges.
           </p>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-neutral-500 hover:text-neutral-700 underline cursor-pointer"
+          <p className="text-neutral-500 text-xs mb-4">
+            To get access, set <code className="bg-neutral-100 px-1 py-0.5 rounded text-xs">is_superadmin = true</code> for your profile in the Supabase dashboard:
+          </p>
+          <a
+            href={supabaseLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-neutral-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-neutral-800 transition-colors mb-4"
           >
-            Sign out
-          </button>
+            Open in Supabase
+          </a>
+          <div>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-neutral-500 hover:text-neutral-700 underline cursor-pointer"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
     );

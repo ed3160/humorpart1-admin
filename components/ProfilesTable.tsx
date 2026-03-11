@@ -21,6 +21,7 @@ export default function ProfilesTable() {
   const [profiles, setProfiles] = useState<ProfileInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
   const [mode, setMode] = useState<"direct" | "derived">("direct");
 
   useEffect(() => {
@@ -121,6 +122,10 @@ export default function ProfilesTable() {
       })
     : profiles;
 
+  const PAGE_SIZE = 25;
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   return (
     <div>
       <h2 className="text-xl font-bold text-neutral-900 mb-4">Profiles</h2>
@@ -136,7 +141,7 @@ export default function ProfilesTable() {
           type="text"
           placeholder="Search by ID, email, or name..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
           className="border border-neutral-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-neutral-400"
         />
         <span className="text-xs text-neutral-400 ml-auto">{filtered.length} profiles</span>
@@ -163,10 +168,10 @@ export default function ProfilesTable() {
           <tbody className="divide-y divide-neutral-100">
             {loading ? (
               <tr><td colSpan={8} className="px-3 py-4 text-neutral-500">Loading...</td></tr>
-            ) : filtered.length === 0 ? (
+            ) : paginated.length === 0 ? (
               <tr><td colSpan={8} className="px-3 py-4 text-neutral-500">No profiles found.</td></tr>
             ) : (
-              filtered.map((p) => (
+              paginated.map((p) => (
                 <tr key={p.id} className="hover:bg-neutral-50">
                   <td className="px-3 py-2 font-mono text-xs text-neutral-600" title={p.id}>
                     {p.id.slice(0, 8)}...
@@ -196,6 +201,14 @@ export default function ProfilesTable() {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center gap-2 mt-4 text-sm">
+          <button disabled={page === 0} onClick={() => setPage((p) => p - 1)} className="px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 hover:bg-neutral-100 cursor-pointer disabled:cursor-default">Prev</button>
+          <span className="text-neutral-500">Page {page + 1} of {totalPages}</span>
+          <button disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)} className="px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 hover:bg-neutral-100 cursor-pointer disabled:cursor-default">Next</button>
+        </div>
+      )}
     </div>
   );
 }
