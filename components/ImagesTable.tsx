@@ -344,14 +344,14 @@ export default function ImagesTable({ navigateTo, filter }: { navigateTo: (secti
               <th className="text-left px-3 py-2 font-medium text-neutral-600">URL</th>
               <th className="text-left px-3 py-2 font-medium text-neutral-600">Profile</th>
               <th
-                className="text-left px-3 py-2 font-medium text-neutral-600 cursor-pointer hover:text-neutral-900 select-none"
+                className="text-left px-3 py-2 font-medium text-neutral-600 cursor-pointer hover:text-neutral-900 select-none whitespace-nowrap"
                 onClick={() => toggleSort("is_public")}
               >
                 Public{sortIcon("is_public")}
               </th>
               <th className="text-left px-3 py-2 font-medium text-neutral-600">Common</th>
               <th
-                className="text-left px-3 py-2 font-medium text-neutral-600 cursor-pointer hover:text-neutral-900 select-none"
+                className="text-left px-3 py-2 font-medium text-neutral-600 cursor-pointer hover:text-neutral-900 select-none whitespace-nowrap"
                 onClick={() => toggleSort("created_datetime_utc")}
               >
                 Created{sortIcon("created_datetime_utc")}
@@ -502,7 +502,7 @@ export default function ImagesTable({ navigateTo, filter }: { navigateTo: (secti
                                         <div key={cap.id} className="bg-white rounded-lg border border-neutral-200 p-3 text-sm">
                                           <p className="text-neutral-800 mb-2">{cap.content}</p>
                                           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-500">
-                                            {cap.humor_flavor_id && <span>Flavor: <span className="font-mono">{cap.humor_flavor_id.slice(0, 8)}...</span></span>}
+                                            {cap.humor_flavor_id != null && <span>Flavor: <span className="font-mono">{cap.humor_flavor_id}</span></span>}
                                             <span>Likes: {cap.like_count ?? 0}</span>
                                             <span>Featured: {cap.is_featured ? "Yes" : "No"}</span>
                                             {votes && (
