@@ -172,7 +172,7 @@ export default function CaptionRequestsTable({ navigateTo, filter }: { navigateT
                                   <div className="space-y-1">
                                     {detailChains.map((chain) => (
                                       <div key={chain.id} className="bg-white rounded border border-neutral-200 p-2 flex items-center justify-between">
-                                        <span className="text-xs font-mono text-neutral-600">{chain.id.slice(0, 12)}...</span>
+                                        <span className="text-xs font-mono text-neutral-600">{String(chain.id)}</span>
                                         <span className="text-xs text-neutral-400">{new Date(chain.created_datetime_utc).toLocaleDateString()}</span>
                                       </div>
                                     ))}
