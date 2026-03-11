@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { NavFilter } from "./AdminShell";
+import FkLink from "./FkLink";
 
 interface Caption {
   id: string;
@@ -16,7 +18,7 @@ const PAGE_SIZE = 25;
 type SortField = "created_datetime_utc" | "is_public";
 type SortDir = "asc" | "desc";
 
-export default function CaptionsTable() {
+export default function CaptionsTable({ navigateTo, filter }: { navigateTo: (section: "profiles" | "images" | "captions", filter?: NavFilter) => void; filter: NavFilter | null }) {
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -38,6 +40,8 @@ export default function CaptionsTable() {
     if (search.trim()) query = query.ilike("content", `%${search.trim()}%`);
     if (filterPublic === "yes") query = query.eq("is_public", true);
     if (filterPublic === "no") query = query.eq("is_public", false);
+    if (filter?.field === "image_id") query = query.eq("image_id", filter.value);
+    if (filter?.field === "profile_id") query = query.eq("profile_id", filter.value);
 
     const { data, count } = await query
       .order(sortField, { ascending: sortDir === "asc" })
@@ -47,7 +51,7 @@ export default function CaptionsTable() {
     setCaptions(data ?? []);
     setTotal(count ?? 0);
     setLoading(false);
-  }, [page, search, sortField, sortDir, filterPublic]);
+  }, [page, search, sortField, sortDir, filterPublic, filter]);
 
   useEffect(() => { fetchCaptions(); }, [fetchCaptions]);
 
@@ -64,6 +68,12 @@ export default function CaptionsTable() {
     <div>
       <h2 className="text-xl font-bold text-neutral-900 mb-4">Captions</h2>
 
+      {filter && (
+        <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+          Filtered by {filter.field}: <code className="bg-blue-100 px-1 rounded">{filter.value.slice(0, 12)}...</code>
+          <button onClick={() => navigateTo("captions")} className="ml-auto text-blue-500 hover:text-blue-700 underline cursor-pointer">Clear</button>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <input
           type="text"
@@ -114,8 +124,12 @@ export default function CaptionsTable() {
               captions.map((c) => (
                 <tr key={c.id} className="hover:bg-neutral-50">
                   <td className="px-3 py-2 text-neutral-700 max-w-md truncate" title={c.content}>{c.content}</td>
-                  <td className="px-3 py-2 text-neutral-500 font-mono text-xs">{c.image_id?.slice(0, 8) ?? "-"}</td>
-                  <td className="px-3 py-2 text-neutral-500 font-mono text-xs">{c.profile_id?.slice(0, 8) ?? "-"}</td>
+                  <td className="px-3 py-2">
+                    {c.image_id ? <FkLink label={c.image_id.slice(0, 8) + "..."} id={c.image_id} section="images" field="id" navigateTo={navigateTo} /> : "-"}
+                  </td>
+                  <td className="px-3 py-2">
+                    {c.profile_id ? <FkLink label={c.profile_id.slice(0, 8) + "..."} id={c.profile_id} section="profiles" field="id" navigateTo={navigateTo} /> : "-"}
+                  </td>
                   <td className="px-3 py-2">
                     <span className={c.is_public ? "text-green-600 text-xs font-medium" : "text-neutral-400 text-xs"}>
                       {c.is_public ? "Yes" : "No"}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { NavFilter } from "./AdminShell";
 
 interface ProfileInfo {
   id: string;
@@ -17,7 +18,7 @@ interface ProfileInfo {
   vote_count: number;
 }
 
-export default function ProfilesTable() {
+export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (section: "profiles" | "images" | "captions", filter?: NavFilter) => void; filter: NavFilter | null }) {
   const [profiles, setProfiles] = useState<ProfileInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -192,8 +193,16 @@ export default function ProfilesTable() {
                       </td>
                     </>
                   )}
-                  <td className="px-3 py-2 text-neutral-700 text-xs tabular-nums">{p.image_count}</td>
-                  <td className="px-3 py-2 text-neutral-700 text-xs tabular-nums">{p.caption_count}</td>
+                  <td className="px-3 py-2 text-xs tabular-nums">
+                    {p.image_count > 0 ? (
+                      <button onClick={() => navigateTo("images", { field: "profile_id", value: p.id })} className="text-blue-600 hover:underline cursor-pointer">{p.image_count}</button>
+                    ) : <span className="text-neutral-400">0</span>}
+                  </td>
+                  <td className="px-3 py-2 text-xs tabular-nums">
+                    {p.caption_count > 0 ? (
+                      <button onClick={() => navigateTo("captions", { field: "profile_id", value: p.id })} className="text-blue-600 hover:underline cursor-pointer">{p.caption_count}</button>
+                    ) : <span className="text-neutral-400">0</span>}
+                  </td>
                   <td className="px-3 py-2 text-neutral-700 text-xs tabular-nums">{p.vote_count}</td>
                 </tr>
               ))

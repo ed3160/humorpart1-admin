@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { NavFilter } from "./AdminShell";
+import FkLink from "./FkLink";
 
 interface ImageRow {
   id: string;
@@ -28,7 +30,7 @@ const STEP_LABELS: Record<UploadStep, string> = {
 type SortField = "created_datetime_utc" | "is_public";
 type SortDir = "asc" | "desc";
 
-export default function ImagesTable() {
+export default function ImagesTable({ navigateTo, filter }: { navigateTo: (section: "profiles" | "images" | "captions", filter?: NavFilter) => void; filter: NavFilter | null }) {
   const [images, setImages] = useState<ImageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -70,6 +72,7 @@ export default function ImagesTable() {
 
     if (filterPublic === "yes") query = query.eq("is_public", true);
     if (filterPublic === "no") query = query.eq("is_public", false);
+    if (filter?.field === "profile_id") query = query.eq("profile_id", filter.value);
 
     const { data, count } = await query
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
@@ -78,7 +81,7 @@ export default function ImagesTable() {
     setImages(data ?? []);
     setTotal(count ?? 0);
     setLoading(false);
-  }, [page, sortField, sortDir, filterPublic]);
+  }, [page, sortField, sortDir, filterPublic, filter]);
 
   useEffect(() => { fetchImages(); }, [fetchImages]);
 
@@ -241,6 +244,12 @@ export default function ImagesTable() {
       </div>
 
       {/* Filters */}
+      {filter && (
+        <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+          Filtered by {filter.field}: <code className="bg-blue-100 px-1 rounded">{filter.value.slice(0, 12)}...</code>
+          <button onClick={() => navigateTo("images")} className="ml-auto text-blue-500 hover:text-blue-700 underline cursor-pointer">Clear</button>
+        </div>
+      )}
       <div className="flex items-center gap-3 mb-3">
         <span className="text-xs text-neutral-500">Filter:</span>
         <select
@@ -311,7 +320,11 @@ export default function ImagesTable() {
                       <span className="text-neutral-700 truncate block max-w-[200px]" title={img.url}>{img.url}</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-neutral-500 font-mono text-xs">{img.profile_id?.slice(0, 8) ?? "-"}</td>
+                  <td className="px-3 py-2">
+                    {img.profile_id ? (
+                      <FkLink label={img.profile_id.slice(0, 8) + "..."} id={img.profile_id} section="profiles" field="id" navigateTo={navigateTo} />
+                    ) : "-"}
+                  </td>
                   <td className="px-3 py-2">
                     {editId === img.id ? (
                       <input type="checkbox" checked={editIsPublic} onChange={(e) => setEditIsPublic(e.target.checked)} />
