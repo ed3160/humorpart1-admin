@@ -118,12 +118,12 @@ export default function LlmResponsesTable({ navigateTo, filter }: { navigateTo: 
                     </td>
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       {r.caption_request_id ? (
-                        <FkLink label={r.caption_request_id.slice(0, 8) + "..."} id={r.caption_request_id} section="caption_requests" field="id" navigateTo={navigateTo} />
+                        <FkLink label={String(r.caption_request_id).slice(0, 8) + "..."} id={String(r.caption_request_id)} section="caption_requests" field="id" navigateTo={navigateTo} />
                       ) : "-"}
                     </td>
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       {r.llm_prompt_chain_id ? (
-                        <FkLink label={r.llm_prompt_chain_id.slice(0, 8) + "..."} id={r.llm_prompt_chain_id} section="prompt_chains" field="id" navigateTo={navigateTo} />
+                        <FkLink label={String(r.llm_prompt_chain_id).slice(0, 8) + "..."} id={String(r.llm_prompt_chain_id)} section="prompt_chains" field="id" navigateTo={navigateTo} />
                       ) : "-"}
                     </td>
                     <td className="px-3 py-2 text-neutral-600 text-xs font-mono">

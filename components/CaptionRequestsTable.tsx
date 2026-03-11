@@ -135,7 +135,7 @@ export default function CaptionRequestsTable({ navigateTo, filter }: { navigateT
                 <Fragment key={r.id}>
                   <tr className="hover:bg-neutral-50 cursor-pointer" onClick={() => toggleExpand(r)}>
                     <td className="px-3 py-2 text-neutral-400 text-xs">{expandedId === r.id ? "v" : ">"}</td>
-                    <td className="px-3 py-2 text-neutral-500 font-mono text-xs">{r.id.slice(0, 8)}...</td>
+                    <td className="px-3 py-2 text-neutral-500 font-mono text-xs">{String(r.id).slice(0, 8)}...</td>
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       {r.image_id ? <FkLink label={r.image_id.slice(0, 8) + "..."} id={r.image_id} section="images" field="id" navigateTo={navigateTo} /> : "-"}
                     </td>
