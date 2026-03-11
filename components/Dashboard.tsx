@@ -16,7 +16,9 @@ interface RecentCaption {
   created_datetime_utc: string;
 }
 
-export default function Dashboard() {
+import type { NavFilter } from "./AdminShell";
+
+export default function Dashboard({ navigateTo }: { navigateTo: (section: "profiles" | "images" | "captions", filter?: NavFilter) => void }) {
   const [stats, setStats] = useState<Stats>({
     images: 0,
     captions: 0,
@@ -62,10 +64,10 @@ export default function Dashboard() {
     return <div className="text-neutral-500">Loading dashboard...</div>;
   }
 
-  const statCards = [
-    { label: "Images", value: stats.images },
-    { label: "Captions", value: stats.captions },
-    { label: "Profiles", value: stats.profiles },
+  const statCards: { label: string; value: number; section?: "profiles" | "images" | "captions" }[] = [
+    { label: "Images", value: stats.images, section: "images" },
+    { label: "Captions", value: stats.captions, section: "captions" },
+    { label: "Profiles", value: stats.profiles, section: "profiles" },
     { label: "Votes", value: stats.votes },
   ];
 
@@ -77,7 +79,8 @@ export default function Dashboard() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="bg-white rounded-lg border border-neutral-200 p-4"
+            onClick={() => card.section && navigateTo(card.section)}
+            className={`bg-white rounded-lg border border-neutral-200 p-4 ${card.section ? "cursor-pointer hover:border-neutral-400 transition-colors" : ""}`}
           >
             <div className="text-sm text-neutral-500 mb-1">{card.label}</div>
             <div className="text-2xl font-bold text-neutral-900">
