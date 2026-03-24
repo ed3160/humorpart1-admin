@@ -14,7 +14,7 @@ const PAGE_SIZE = 25;
 type SortField = "created_datetime_utc" | "name";
 type SortDir = "asc" | "desc";
 
-export default function LlmProvidersTable({ filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function LlmProvidersTable({ filter, userId }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null; userId: string }) {
   const [rows, setRows] = useState<LlmProvider[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -59,7 +59,7 @@ export default function LlmProvidersTable({ filter }: { navigateTo: (section: st
     if (!newName.trim()) return;
     setCreating(true);
     const supabase = createClient();
-    await supabase.from("llm_providers").insert({ name: newName.trim() });
+    await supabase.from("llm_providers").insert({ name: newName.trim(), created_by_user_id: userId, modified_by_user_id: userId });
     setNewName("");
     setCreating(false);
     fetchRows();
@@ -67,7 +67,7 @@ export default function LlmProvidersTable({ filter }: { navigateTo: (section: st
 
   const handleUpdate = async (id: number) => {
     const supabase = createClient();
-    await supabase.from("llm_providers").update({ name: editName.trim() }).eq("id", id);
+    await supabase.from("llm_providers").update({ name: editName.trim(), modified_by_user_id: userId }).eq("id", id);
     setEditId(null);
     fetchRows();
   };

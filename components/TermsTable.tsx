@@ -24,7 +24,7 @@ const PAGE_SIZE = 25;
 type SortField = "created_datetime_utc" | "term" | "priority";
 type SortDir = "asc" | "desc";
 
-export default function TermsTable({ filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function TermsTable({ filter, userId }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null; userId: string }) {
   const [rows, setRows] = useState<Term[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -97,6 +97,8 @@ export default function TermsTable({ filter }: { navigateTo: (section: string, f
       example: newExample.trim() || null,
       priority: newPriority,
       term_type_id: newTermTypeId,
+      created_by_user_id: userId,
+      modified_by_user_id: userId,
     });
     setNewTerm(""); setNewDefinition(""); setNewExample(""); setNewPriority(0); setNewTermTypeId(null);
     setCreating(false);
@@ -111,6 +113,7 @@ export default function TermsTable({ filter }: { navigateTo: (section: string, f
       example: editExample.trim() || null,
       priority: editPriority,
       term_type_id: editTermTypeId,
+      modified_by_user_id: userId,
     }).eq("id", id);
     setEditId(null);
     fetchRows();

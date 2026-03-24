@@ -14,7 +14,7 @@ const PAGE_SIZE = 25;
 type SortField = "created_datetime_utc" | "apex_domain";
 type SortDir = "asc" | "desc";
 
-export default function AllowedDomainsTable({ filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function AllowedDomainsTable({ filter, userId }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null; userId: string }) {
   const [rows, setRows] = useState<AllowedDomain[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -59,7 +59,7 @@ export default function AllowedDomainsTable({ filter }: { navigateTo: (section: 
     if (!newDomain.trim()) return;
     setCreating(true);
     const supabase = createClient();
-    await supabase.from("allowed_signup_domains").insert({ apex_domain: newDomain.trim() });
+    await supabase.from("allowed_signup_domains").insert({ apex_domain: newDomain.trim(), created_by_user_id: userId, modified_by_user_id: userId });
     setNewDomain("");
     setCreating(false);
     fetchRows();
@@ -67,7 +67,7 @@ export default function AllowedDomainsTable({ filter }: { navigateTo: (section: 
 
   const handleUpdate = async (id: number) => {
     const supabase = createClient();
-    await supabase.from("allowed_signup_domains").update({ apex_domain: editDomain.trim() }).eq("id", id);
+    await supabase.from("allowed_signup_domains").update({ apex_domain: editDomain.trim(), modified_by_user_id: userId }).eq("id", id);
     setEditId(null);
     fetchRows();
   };

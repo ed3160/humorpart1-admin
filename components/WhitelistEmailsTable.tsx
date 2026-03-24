@@ -15,7 +15,7 @@ const PAGE_SIZE = 25;
 type SortField = "created_datetime_utc" | "email_address";
 type SortDir = "asc" | "desc";
 
-export default function WhitelistEmailsTable({ filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function WhitelistEmailsTable({ filter, userId }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null; userId: string }) {
   const [rows, setRows] = useState<WhitelistEmail[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -60,7 +60,7 @@ export default function WhitelistEmailsTable({ filter }: { navigateTo: (section:
     if (!newEmail.trim()) return;
     setCreating(true);
     const supabase = createClient();
-    await supabase.from("whitelist_email_addresses").insert({ email_address: newEmail.trim() });
+    await supabase.from("whitelist_email_addresses").insert({ email_address: newEmail.trim(), created_by_user_id: userId, modified_by_user_id: userId });
     setNewEmail("");
     setCreating(false);
     fetchRows();
@@ -68,7 +68,7 @@ export default function WhitelistEmailsTable({ filter }: { navigateTo: (section:
 
   const handleUpdate = async (id: number) => {
     const supabase = createClient();
-    await supabase.from("whitelist_email_addresses").update({ email_address: editEmail.trim() }).eq("id", id);
+    await supabase.from("whitelist_email_addresses").update({ email_address: editEmail.trim(), modified_by_user_id: userId }).eq("id", id);
     setEditId(null);
     fetchRows();
   };

@@ -23,7 +23,7 @@ const PAGE_SIZE = 25;
 type SortField = "created_datetime_utc" | "name";
 type SortDir = "asc" | "desc";
 
-export default function LlmModelsTable({ navigateTo, filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function LlmModelsTable({ navigateTo, filter, userId }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null; userId: string }) {
   const [rows, setRows] = useState<LlmModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -95,6 +95,8 @@ export default function LlmModelsTable({ navigateTo, filter }: { navigateTo: (se
       llm_provider_id: newProviderId,
       provider_model_id: newProviderModelId.trim() || null,
       is_temperature_supported: newTempSupported,
+      created_by_user_id: userId,
+      modified_by_user_id: userId,
     });
     setNewName(""); setNewProviderId(null); setNewProviderModelId(""); setNewTempSupported(false);
     setCreating(false);
@@ -108,6 +110,7 @@ export default function LlmModelsTable({ navigateTo, filter }: { navigateTo: (se
       llm_provider_id: editProviderId,
       provider_model_id: editProviderModelId.trim() || null,
       is_temperature_supported: editTempSupported,
+      modified_by_user_id: userId,
     }).eq("id", id);
     setEditId(null);
     fetchRows();

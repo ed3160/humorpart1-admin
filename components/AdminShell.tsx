@@ -201,20 +201,20 @@ export default function AdminShell({
       <main className="flex-1 p-6 overflow-y-auto h-screen">
         {activeSection === "dashboard" && <Dashboard navigateTo={navigateTo} />}
         {activeSection === "profiles" && <ProfilesTable navigateTo={navigateTo} filter={filter} />}
-        {activeSection === "images" && <ImagesTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "images" && <ImagesTable navigateTo={navigateTo} filter={filter} userId={userId} />}
         {activeSection === "captions" && <CaptionsTable navigateTo={navigateTo} filter={filter} />}
         {activeSection === "caption_requests" && <CaptionRequestsTable navigateTo={navigateTo} filter={filter} />}
-        {activeSection === "caption_examples" && <CaptionExamplesTable navigateTo={navigateTo} filter={filter} />}
-        {activeSection === "terms" && <TermsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "caption_examples" && <CaptionExamplesTable navigateTo={navigateTo} filter={filter} userId={userId} />}
+        {activeSection === "terms" && <TermsTable navigateTo={navigateTo} filter={filter} userId={userId} />}
         {activeSection === "humor_flavors" && <HumorFlavorsTable navigateTo={navigateTo} filter={filter} />}
         {activeSection === "flavor_steps" && <HumorFlavorStepsTable navigateTo={navigateTo} filter={filter} />}
-        {activeSection === "humor_mix" && <HumorMixTable navigateTo={navigateTo} filter={filter} />}
-        {activeSection === "llm_providers" && <LlmProvidersTable navigateTo={navigateTo} filter={filter} />}
-        {activeSection === "llm_models" && <LlmModelsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "humor_mix" && <HumorMixTable navigateTo={navigateTo} filter={filter} userId={userId} />}
+        {activeSection === "llm_providers" && <LlmProvidersTable navigateTo={navigateTo} filter={filter} userId={userId} />}
+        {activeSection === "llm_models" && <LlmModelsTable navigateTo={navigateTo} filter={filter} userId={userId} />}
         {activeSection === "prompt_chains" && <LlmPromptChainsTable navigateTo={navigateTo} filter={filter} />}
         {activeSection === "llm_responses" && <LlmResponsesTable navigateTo={navigateTo} filter={filter} />}
-        {activeSection === "allowed_domains" && <AllowedDomainsTable navigateTo={navigateTo} filter={filter} />}
-        {activeSection === "whitelist_emails" && <WhitelistEmailsTable navigateTo={navigateTo} filter={filter} />}
+        {activeSection === "allowed_domains" && <AllowedDomainsTable navigateTo={navigateTo} filter={filter} userId={userId} />}
+        {activeSection === "whitelist_emails" && <WhitelistEmailsTable navigateTo={navigateTo} filter={filter} userId={userId} />}
       </main>
     </div>
   );

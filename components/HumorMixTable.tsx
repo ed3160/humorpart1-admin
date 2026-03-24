@@ -16,7 +16,7 @@ const PAGE_SIZE = 25;
 type SortField = "created_datetime_utc" | "humor_flavor_id";
 type SortDir = "asc" | "desc";
 
-export default function HumorMixTable({ navigateTo, filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function HumorMixTable({ navigateTo, filter, userId }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null; userId: string }) {
   const [rows, setRows] = useState<HumorMix[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -51,7 +51,7 @@ export default function HumorMixTable({ navigateTo, filter }: { navigateTo: (sec
 
   const handleUpdate = async (id: number) => {
     const supabase = createClient();
-    await supabase.from("humor_flavor_mix").update({ caption_count: editCaptionCount }).eq("id", id);
+    await supabase.from("humor_flavor_mix").update({ caption_count: editCaptionCount, modified_by_user_id: userId }).eq("id", id);
     setEditId(null);
     fetchRows();
   };

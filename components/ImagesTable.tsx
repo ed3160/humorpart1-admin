@@ -48,7 +48,7 @@ const STEP_LABELS: Record<UploadStep, string> = {
 type SortField = "created_datetime_utc" | "is_public";
 type SortDir = "asc" | "desc";
 
-export default function ImagesTable({ navigateTo, filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function ImagesTable({ navigateTo, filter, userId }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null; userId: string }) {
   const [images, setImages] = useState<ImageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -174,7 +174,7 @@ export default function ImagesTable({ navigateTo, filter }: { navigateTo: (secti
     if (!newUrl.trim()) return;
     setCreating(true);
     const supabase = createClient();
-    await supabase.from("images").insert({ url: newUrl.trim(), is_public: newIsPublic });
+    await supabase.from("images").insert({ url: newUrl.trim(), is_public: newIsPublic, created_by_user_id: userId, modified_by_user_id: userId });
     setNewUrl("");
     setNewIsPublic(false);
     setCreating(false);
@@ -183,7 +183,7 @@ export default function ImagesTable({ navigateTo, filter }: { navigateTo: (secti
 
   const handleUpdate = async (id: string) => {
     const supabase = createClient();
-    await supabase.from("images").update({ url: editUrl, is_public: editIsPublic }).eq("id", id);
+    await supabase.from("images").update({ url: editUrl, is_public: editIsPublic, modified_by_user_id: userId }).eq("id", id);
     setEditId(null);
     fetchImages();
   };

@@ -19,7 +19,7 @@ const PAGE_SIZE = 25;
 type SortField = "created_datetime_utc" | "priority";
 type SortDir = "asc" | "desc";
 
-export default function CaptionExamplesTable({ filter }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null }) {
+export default function CaptionExamplesTable({ filter, userId }: { navigateTo: (section: string, filter?: NavFilter) => void; filter: NavFilter | null; userId: string }) {
   const [rows, setRows] = useState<CaptionExample[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -77,6 +77,8 @@ export default function CaptionExamplesTable({ filter }: { navigateTo: (section:
       caption: newCaption.trim(),
       explanation: newExplanation.trim() || null,
       priority: newPriority,
+      created_by_user_id: userId,
+      modified_by_user_id: userId,
     });
     setNewImageDescription(""); setNewCaption(""); setNewExplanation(""); setNewPriority(0);
     setCreating(false);
@@ -90,6 +92,7 @@ export default function CaptionExamplesTable({ filter }: { navigateTo: (section:
       caption: editCaption.trim(),
       explanation: editExplanation.trim() || null,
       priority: editPriority,
+      modified_by_user_id: userId,
     }).eq("id", id);
     setEditId(null);
     fetchRows();
