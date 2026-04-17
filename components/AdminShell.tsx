@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Dashboard from "./Dashboard";
+import CaptionRatingStats from "./CaptionRatingStats";
 import ProfilesTable from "./ProfilesTable";
 import ImagesTable from "./ImagesTable";
 import CaptionsTable from "./CaptionsTable";
@@ -21,6 +23,7 @@ import WhitelistEmailsTable from "./WhitelistEmailsTable";
 
 type Section =
   | "dashboard"
+  | "rating_stats"
   | "profiles"
   | "images"
   | "captions"
@@ -42,6 +45,26 @@ export interface NavFilter {
   value: string;
 }
 
+const VALID_SECTIONS: ReadonlySet<Section> = new Set([
+  "dashboard",
+  "rating_stats",
+  "profiles",
+  "images",
+  "captions",
+  "caption_requests",
+  "caption_examples",
+  "terms",
+  "humor_flavors",
+  "flavor_steps",
+  "humor_mix",
+  "llm_providers",
+  "llm_models",
+  "prompt_chains",
+  "llm_responses",
+  "allowed_domains",
+  "whitelist_emails",
+]);
+
 interface NavGroup {
   label: string;
   items: { key: Section; label: string }[];
@@ -51,6 +74,10 @@ const navGroups: NavGroup[] = [
   {
     label: "",
     items: [{ key: "dashboard", label: "Dashboard" }],
+  },
+  {
+    label: "Insights",
+    items: [{ key: "rating_stats", label: "Rating Stats" }],
   },
   {
     label: "Content",
@@ -92,8 +119,19 @@ export default function AdminShell({
   userEmail: string;
 }) {
   const [isSuperadmin, setIsSuperadmin] = useState<boolean | null>(null);
-  const [activeSection, setActiveSection] = useState<Section>("dashboard");
-  const [filter, setFilter] = useState<NavFilter | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const sectionParam = searchParams.get("section");
+  const activeSection: Section =
+    sectionParam && VALID_SECTIONS.has(sectionParam as Section)
+      ? (sectionParam as Section)
+      : "dashboard";
+
+  const filterField = searchParams.get("field");
+  const filterValue = searchParams.get("value");
+  const filter: NavFilter | null =
+    filterField && filterValue ? { field: filterField, value: filterValue } : null;
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -111,10 +149,19 @@ export default function AdminShell({
     checkAdmin();
   }, [userId, userEmail]);
 
-  const navigateTo = useCallback((section: string, navFilter?: NavFilter) => {
-    setActiveSection(section as Section);
-    setFilter(navFilter ?? null);
-  }, []);
+  const navigateTo = useCallback(
+    (section: string, navFilter?: NavFilter) => {
+      const params = new URLSearchParams();
+      if (section && section !== "dashboard") params.set("section", section);
+      if (navFilter) {
+        params.set("field", navFilter.field);
+        params.set("value", navFilter.value);
+      }
+      const q = params.toString();
+      router.push(q ? `/?${q}` : "/");
+    },
+    [router]
+  );
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -200,6 +247,7 @@ export default function AdminShell({
 
       <main className="flex-1 p-6 overflow-y-auto h-screen">
         {activeSection === "dashboard" && <Dashboard navigateTo={navigateTo} />}
+        {activeSection === "rating_stats" && <CaptionRatingStats navigateTo={navigateTo} />}
         {activeSection === "profiles" && <ProfilesTable navigateTo={navigateTo} filter={filter} />}
         {activeSection === "images" && <ImagesTable navigateTo={navigateTo} filter={filter} userId={userId} />}
         {activeSection === "captions" && <CaptionsTable navigateTo={navigateTo} filter={filter} />}

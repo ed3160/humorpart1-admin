@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import AdminShell from "@/components/AdminShell";
 import LoginPage from "@/components/LoginPage";
@@ -12,5 +13,9 @@ export default async function Home() {
     return <LoginPage />;
   }
 
-  return <AdminShell userId={user.id} userEmail={user.email ?? ""} />;
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-neutral-50 text-neutral-500">Loading...</div>}>
+      <AdminShell userId={user.id} userEmail={user.email ?? ""} />
+    </Suspense>
+  );
 }

@@ -146,8 +146,12 @@ export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (sec
     load();
   }, []);
 
+  const idFiltered = filter?.field === "id"
+    ? profiles.filter((p) => p.id === filter.value)
+    : profiles;
+
   const filtered = search.trim()
-    ? profiles.filter((p) => {
+    ? idFiltered.filter((p) => {
         const s = search.toLowerCase();
         return (
           p.id.toLowerCase().includes(s) ||
@@ -156,7 +160,7 @@ export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (sec
           (p.last_name?.toLowerCase().includes(s))
         );
       })
-    : profiles;
+    : idFiltered;
 
   const PAGE_SIZE = 25;
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
@@ -169,6 +173,13 @@ export default function ProfilesTable({ navigateTo, filter }: { navigateTo: (sec
       {mode === "derived" && (
         <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
           RLS restricts direct profile reads. Showing {profiles.length} profiles derived from activity in images, captions, and votes.
+        </div>
+      )}
+
+      {filter && (
+        <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+          Filtered by {filter.field}: <code className="bg-blue-100 px-1 rounded">{filter.value.slice(0, 12)}...</code>
+          <button onClick={() => navigateTo("profiles")} className="ml-auto text-blue-500 hover:text-blue-700 underline cursor-pointer">Clear</button>
         </div>
       )}
 

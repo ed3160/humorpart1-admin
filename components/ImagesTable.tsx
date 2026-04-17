@@ -97,6 +97,7 @@ export default function ImagesTable({ navigateTo, filter, userId }: { navigateTo
     if (filterPublic === "yes") query = query.eq("is_public", true);
     if (filterPublic === "no") query = query.eq("is_public", false);
     if (filter?.field === "profile_id") query = query.eq("profile_id", filter.value);
+    if (filter?.field === "id") query = query.eq("id", filter.value);
 
     const { data, count } = await query
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
