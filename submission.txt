@@ -1,7 +1,7 @@
 Vercel:
-- Admin Area (latest commit-specific): https://humorpart1-admin-9xedsbf8j-eshas-projects-a98d311b.vercel.app
+- Admin Area (latest commit-specific): https://humorpart1-admin-dmbyv6o0c-eshas-projects-a98d311b.vercel.app
 
-Github (latest commit for Admin): https://github.com/ed3160/humorpart1-admin/commit/885d79d736fdbdb2dcdb12d04890e7c717310528
+Github (latest commit for Admin): https://github.com/ed3160/humorpart1-admin/commit/a567e7cde22d2e422b953aaa3e1c6928f438b678
 
 
 ==================================================================
