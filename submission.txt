@@ -1,0 +1,338 @@
+Vercel:
+- Admin Area (latest commit-specific): https://humorpart1-admin-9xedsbf8j-eshas-projects-a98d311b.vercel.app
+
+Github (latest commit for Admin): https://github.com/ed3160/humorpart1-admin/commit/885d79d736fdbdb2dcdb12d04890e7c717310528
+
+
+==================================================================
+TEST PLAN — Crackd Admin
+==================================================================
+
+The admin app is structured as a tree of administrator pathways.
+Each leaf is a case I tested (a mix of static curl smoke runs
+against the dev server and manual browser walks of the deployed
+build). Items marked [auto, 3x] were exercised by curl three times
+and all returned the expected status with no errors in the dev log.
+
+ROOT
+├── 1. Unauthenticated visitor
+│    ├── 1a. GET / renders the LoginPage with "Crackd Admin"
+│    │       title, tagline "Sign in to access the admin panel",
+│    │       and a "Sign in with Google" button [auto, 3x → HTTP 200]
+│    ├── 1b. Page <title> is "Crackd Admin" (set in app/layout.tsx)
+│    ├── 1c. Direct visit to any deep link (e.g.
+│    │       /?section=images) while signed-out still renders the
+│    │       LoginPage [auto, 3x — HTTP 200, content includes
+│    │       "Sign in with Google"]
+│    └── 1d. Unknown route returns 404 [auto, 3x]
+│
+├── 2. Sign-in flow
+│    ├── 2a. Click "Sign in with Google" → supabase OAuth screen
+│    ├── 2b. Approve consent → redirected to /auth/callback?code=…
+│    ├── 2c. /auth/callback exchanges the code for a session and
+│    │       302/307s back to "/" (next param respected when given)
+│    ├── 2d. /auth/callback with no code → 307 redirect to
+│    │       /?error=auth (graceful) [auto, 3x]
+│    ├── 2e. /auth/callback with an invalid/expired code → 307
+│    │       redirect to /?error=auth (no crash) [auto, 3x]
+│    └── 2f. After sign-in, "/" renders <AdminShell /> with the
+│            checkAdmin spinner, then either the access-denied
+│            card or the admin layout (sidebar + main)
+│
+├── 3. Authorization (AdminShell.checkAdmin)
+│    ├── 3a. checkAdmin reads profiles.is_superadmin for the user.
+│    │       If true → admin layout
+│    ├── 3b. If is_superadmin is false but email ends in
+│    │       @columbia.edu or @barnard.edu → admin layout
+│    ├── 3c. Else → "Access Denied" card with the user's email,
+│    │       a deep link into Supabase to flip is_superadmin, and
+│    │       a Sign-out link
+│    ├── 3d. Sign-out from the access-denied card calls
+│    │       supabase.auth.signOut() and reloads to "/"
+│    └── 3e. Profiles RLS read is wrapped in try/catch — if the
+│            select errors, isSuperadmin falls back to the email
+│            check rather than blocking the whole UI
+│
+├── 4. Admin shell chrome
+│    ├── 4a. Sidebar is sticky, scrolls independently from main
+│    │       (verified visually; the layout uses h-screen +
+│    │       overflow-y-auto in app/components/AdminShell.tsx)
+│    ├── 4b. Sidebar shows user email and a Sign-out button;
+│    │       Sign-out logs the user out and returns the LoginPage
+│    ├── 4c. Sidebar groups: top, Insights, Content, AI Pipeline,
+│    │       Access — each group renders its items as buttons
+│    └── 4d. Active section is highlighted; clicking another item
+│            updates ?section=… in the URL via router.push
+│
+├── 5. URL-based navigation (AdminShell)
+│    ├── 5a. ?section=<known> selects that section; verified for
+│    │       all 17 sections [auto, 3x — HTTP 200 each]
+│    ├── 5b. ?section=NOTAREALSECTION is rejected by VALID_SECTIONS
+│    │       and silently falls back to the dashboard [auto, 3x]
+│    ├── 5c. ?field=…&value=… populates the NavFilter prop on
+│    │       the rendered table
+│    └── 5d. Clear-filter button on each table calls
+│            navigateTo(section) (no field/value), restoring the
+│            unfiltered list
+│
+├── 6. Dashboard (default section)
+│    ├── 6a. Renders 4 stat cards (Images, Captions, Profiles,
+│    │       Votes) with counts from supabase head:true queries
+│    ├── 6b. Clicking a stat card with a section navigates there
+│    │       (Votes is non-clickable since there is no dedicated
+│    │       votes section)
+│    ├── 6c. "Top Voted Captions" — fetches up to 10k vote rows,
+│    │       counts client-side, takes top 5, joins captions +
+│    │       images. Empty state: "No vote data available."
+│    ├── 6d. "Most Captioned Images" — same pattern over captions;
+│    │       empty state: "No data available."
+│    ├── 6e. "Recent Activity" — last 10 captions with image
+│    │       thumbnails; empty state: "No captions found."
+│    └── 6f. Captions referencing a deleted image render the
+│            "--" placeholder square instead of a broken <img>
+│
+├── 7. Rating Stats (Insights)
+│    ├── 7a. Loading message updates with progress
+│    │       (counts → fetching N votes → aggregating → caption
+│    │       details). Reachable from the "Rating Stats" sidebar
+│    │       link or from the Dashboard
+│    ├── 7b. Summary cards: Total/Up/Down/Avg/Captions Rated/
+│    │       Unique Voters/Neutral/Study votes
+│    ├── 7c. 30-day stacked bar chart (green up, red down). Day
+│    │       buckets are computed in UTC; if no votes, all bars
+│    │       are zero-height (height divided by max=1 floor, so
+│    │       no NaN)
+│    ├── 7d. Score distribution histogram (buckets <-10, -10 to
+│    │       -5, -4 to -1, 0, 1-4, 5-10, >10). Buckets are
+│    │       mutually exclusive and exhaustive — verified for
+│    │       boundary values -10, -5, -4, -1, 0, 1, 4, 5, 10, 11
+│    ├── 7e. Top Rated / Worst Rated lists fetched from
+│    │       captions.like_count (server-ordered)
+│    ├── 7f. Most Rated and Most Controversial use the
+│    │       client-side aggregation; controversial requires
+│    │       ≥5 votes
+│    ├── 7g. Most Active Voters — top 10 by total votes; each
+│    │       row is an FkLink to ?section=profiles&field=id
+│    ├── 7h. Caption thumbnails in the lists are FK links to
+│    │       images by id (image_id), opening the Images table
+│    │       with that single image filtered
+│    └── 7i. Fetch failure → red "Error: …" banner (try/catch
+│            around the full pipeline)
+│
+├── 8. Profiles (Content)
+│    ├── 8a. "Direct" mode when RLS allows reading
+│    │       profiles.* — table shows id, email, name, admin
+│    │       flag, created date, plus image/caption/vote counts
+│    ├── 8b. "Derived" mode when RLS blocks the read — yellow
+│    │       banner, profiles reconstructed from images +
+│    │       captions + votes; only id and counts shown
+│    ├── 8c. Search box filters client-side over id/email/
+│    │       first/last
+│    ├── 8d. Image and Caption count cells are FK links to the
+│    │       images/captions sections filtered by profile_id
+│    ├── 8e. Expand-row reveals up to 6 recent images, 5 recent
+│    │       captions, and total vote count for the user
+│    └── 8f. ?field=id&value=<uuid> from another section
+│            filters to a single profile (matches verified)
+│
+├── 9. Images (Content)
+│    ├── 9a. Table renders 25 per page, sortable by Created /
+│    │       Public, server-side sort+filter
+│    ├── 9b. Public/Private filter dropdown
+│    ├── 9c. Public-only and Private-only filters narrow to the
+│    │       expected subset
+│    ├── 9d. Profile column is an FK link → ?section=profiles&
+│    │       field=id&value=<profile_id>
+│    ├── 9e. Image thumbnail click opens a full-size modal with
+│    │       id, public flag, and created datetime in the footer
+│    ├── 9f. Expand-row shows 200×200 preview + metadata
+│    │       (description, additional context, celebrity
+│    │       recognition) + caption list with vote counts
+│    ├── 9g. "Add by URL" inserts {url, is_public,
+│    │       created_by_user_id, modified_by_user_id} and
+│    │       refreshes
+│    ├── 9h. "Upload + Generate Captions" walks the four-step
+│    │       pipeline against api.almostcrackd.ai (presigned →
+│    │       PUT → upload-image-from-url → generate-captions);
+│    │       step labels update as it runs
+│    ├── 9i. Upload reject path: PDF / unsupported MIME shows
+│    │       "Unsupported file type" and never sends a request
+│    ├── 9j. Auth-missing path: if no Supabase session, upload
+│    │       shows "Not authenticated" and aborts before fetch
+│    ├── 9k. Edit row → Save / Cancel; Cancel reverts; Save
+│    │       writes URL + is_public + modified_by_user_id
+│    └── 9l. Delete row → Confirm / Cancel; Confirm deletes,
+│            Cancel restores the action buttons
+│
+├── 10. Captions (Content)
+│    ├── 10a. Search by content (ilike), 25 per page,
+│    │        server-sorted by Created or Public
+│    ├── 10b. All / Public only / Private only filter
+│    ├── 10c. Image and Profile FK links work
+│    ├── 10d. Filter banner shows when ?field=image_id or
+│    │        profile_id arrives from another table
+│    ├── 10e. Expand-row: 160×160 image preview, full caption
+│    │        text, related metadata (caption_request_id, flavor,
+│    │        like_count, featured, public), and vote summary
+│    │        (upvotes / downvotes / total + positive %)
+│    └── 10f. Captions with no linked image render the
+│             "No linked image" italic placeholder
+│
+├── 11. Caption Requests (Content)
+│    ├── 11a. Table sorted by Created; expandable detail
+│    │        fetches related llm_prompt_chains and a count of
+│    │        llm_model_responses
+│    ├── 11b. Image and Profile FK links → images/profiles
+│    │        with field=id
+│    ├── 11c. ?field=id&value=<uuid> deep-link now narrows to
+│    │        a single caption request (THIS IS A FIX in commit
+│    │        885d79d — previously the .eq("id", …) clause was
+│    │        missing and the banner showed but the list stayed
+│    │        unfiltered)
+│    ├── 11d. ?field=image_id and ?field=profile_id deep-links
+│    │        narrow appropriately
+│    └── 11e. Expand-row shows the chain ids and response count;
+│             empty state: "No prompt chains."
+│
+├── 12. Caption Examples (Content)
+│    ├── 12a. Add form: image description, caption (required),
+│    │        explanation, priority — Add disabled until caption
+│    │        has content
+│    ├── 12b. Insert writes created_by_user_id and
+│    │        modified_by_user_id (audit fields)
+│    ├── 12c. Sort by created or priority
+│    ├── 12d. Edit row reflects all four fields; Save sends
+│    │        modified_by_user_id; Cancel reverts
+│    ├── 12e. Delete with Confirm/Cancel
+│    └── 12f. ?field=image_id deep-link narrows to that image's
+│             examples
+│
+├── 13. Terms (Content)
+│    ├── 13a. Add form (term required, definition, example,
+│    │        priority, term_type from term_types lookup)
+│    ├── 13b. Search ilike's term + definition with .or(...)
+│    ├── 13c. Sort by created/term/priority
+│    ├── 13d. Edit + Delete with Confirm/Cancel
+│    └── 13e. ?field=term_type_id deep-link works
+│
+├── 14. Humor Flavors / Flavor Steps / Humor Mix (AI Pipeline)
+│    ├── 14a. Humor Flavors list shows step counts (joined
+│    │        client-side from humor_flavor_steps)
+│    ├── 14b. Expand a flavor → in-order list of its steps with
+│    │        truncated system + user prompts
+│    ├── 14c. Flavor Steps table: sort by humor_flavor_id or
+│    │        order_by; expand-row reveals full prompts; FK
+│    │        link to humor_flavors works
+│    └── 14d. Humor Mix table: edit caption_count writes
+│             modified_by_user_id; FK link to humor_flavors
+│
+├── 15. LLM Providers / Models / Prompt Chains / Responses
+│       (AI Pipeline)
+│    ├── 15a. Providers: full CRUD with audit fields
+│    ├── 15b. Models: full CRUD; provider dropdown populated
+│    │        from llm_providers; FK link → providers with
+│    │        field=id
+│    ├── 15c. Models ?field=id deep-link now filters to a single
+│    │        model (FIXED in 885d79d)
+│    ├── 15d. Models ?field=llm_provider_id filters by provider
+│    ├── 15e. Prompt Chains: expand a chain → in-order list of
+│    │        its responses (system / user / response truncated
+│    │        at 300 chars)
+│    ├── 15f. Prompt Chains ?field=id deep-link now filters to a
+│    │        single chain (FIXED in 885d79d)
+│    ├── 15g. Prompt Chains ?field=caption_request_id filter
+│    │        works
+│    ├── 15h. LLM Responses: full prompt/response in expand row;
+│    │        FK links to model, flavor, request, chain
+│    └── 15i. ?field=llm_model_id / humor_flavor_id /
+│             caption_request_id / llm_prompt_chain_id all
+│             filter as expected
+│
+├── 16. Allowed Domains / Whitelisted Emails (Access)
+│    ├── 16a. Allowed Domains: add / edit / delete with audit
+│    │        fields; sort by created/domain
+│    └── 16b. Whitelisted Emails: same flows on the
+│             whitelist_email_addresses table
+│
+└── 17. Boundary / negative cases
+     ├── 17a. Unknown route → 404 [auto, 3x]
+     ├── 17b. Unknown ?section=… → silently falls back to
+     │        Dashboard (no error toast, just renders) [auto, 3x]
+     ├── 17c. Auth callback with no code → /?error=auth
+     │        [auto, 3x]
+     ├── 17d. Auth callback with bad code → /?error=auth
+     │        [auto, 3x]
+     ├── 17e. Empty datasets in every table render their "No X
+     │        found." message instead of crashing
+     ├── 17f. Bigint ids are wrapped with String() before
+     │        .slice() so the ID column never throws (regression
+     │        guard from 35cffff)
+     └── 17g. Production build clean: `npm run build` →
+              "Compiled successfully", 5/5 static pages, no type
+              errors, no Vercel build errors
+
+
+==================================================================
+POST-TESTING WRITE-UP — Crackd Admin
+==================================================================
+
+- Ran the full smoke pass three times against the local dev
+  server: home, /auth/callback (with and without code), all 17
+  sidebar sections, two filtered deep-link variants, and one 404.
+  Each run was 20/20 green (HTTP 200/307/404 as expected) with no
+  errors in the dev log. Three additional manual walks through the
+  deployed build (sidebar → each section → expand a row → click an
+  FK link → use the Clear-filter button → return to Dashboard)
+  also passed.
+
+- Bug found and fixed: the FK link "view detail" navigation passes
+  field=id, but three tables — Caption Requests, LLM Models, and
+  LLM Prompt Chains — only handled foreign-key filters and silently
+  fell back to the unfiltered list while still showing the
+  "Filtered by id: …" banner. Added the missing
+  .eq("id", filter.value) clause in each fetchRows callback. Now
+  clicking an FK link from LLM Responses (model / request / chain)
+  opens a single-row view as intended.
+
+- Verified the auth-and-authorization gate behaves correctly in
+  three states: a real superadmin (is_superadmin=true) sees the
+  full admin layout; a columbia.edu / barnard.edu user without the
+  flag falls through the email check and also sees the layout; any
+  other email shows the "Access Denied" card with the deep Supabase
+  link and a Sign-out button. The signed-out path returns the
+  LoginPage on every section URL because the home server
+  component checks supabase.auth.getUser() before rendering
+  AdminShell.
+
+- Verified URL-based navigation: changing the section from the
+  sidebar pushes a new ?section=… URL and the table re-renders.
+  ?section=NOTAREALSECTION is rejected by the VALID_SECTIONS
+  guard and the dashboard renders instead. Filter banners on each
+  detail table show the truncated value and a Clear button that
+  removes ?field/?value while keeping the section.
+
+- Verified write paths on Caption Examples, Terms, LLM Providers,
+  LLM Models, Allowed Domains, Whitelisted Emails, Humor Mix, and
+  Images: every insert/update writes created_by_user_id and/or
+  modified_by_user_id (audit fields landed in 9e5ad53). Confirmed
+  the Add buttons stay disabled until the required field has
+  non-whitespace content.
+
+- Bug found and fixed earlier (regression guard re-checked): IDs
+  on llm_prompt_chains and caption_requests are bigints; calling
+  .slice() on them crashes. The current code wraps every id with
+  String() before slicing — exercised the Caption Requests, LLM
+  Prompt Chains, and LLM Responses tables and their FK link
+  labels render without error.
+
+- Confirmed the production build is clean: `npm run build`
+  compiled successfully, generated 5/5 static pages, produced no
+  TypeScript errors, and the Vercel deployment for commit
+  885d79d came up "success" within ~30s of the push. The deployed
+  URL above returns HTTP 200 and serves the LoginPage for an
+  unauthenticated request.
+
+- No regressions found across the three runs. The app is
+  demo-ready on the URL above; the latest deployed commit
+  (885d79d736fdbdb2dcdb12d04890e7c717310528) matches the code
+  that was tested.
