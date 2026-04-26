@@ -42,6 +42,7 @@ export default function CaptionRequestsTable({ navigateTo, filter }: { navigateT
       .from("caption_requests")
       .select("id, image_id, profile_id, created_datetime_utc", { count: "exact" });
 
+    if (filter?.field === "id") query = query.eq("id", filter.value);
     if (filter?.field === "image_id") query = query.eq("image_id", filter.value);
     if (filter?.field === "profile_id") query = query.eq("profile_id", filter.value);
 

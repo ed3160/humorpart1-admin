@@ -46,6 +46,7 @@ export default function LlmPromptChainsTable({ navigateTo, filter }: { navigateT
       .from("llm_prompt_chains")
       .select("id, caption_request_id, created_datetime_utc", { count: "exact" });
 
+    if (filter?.field === "id") query = query.eq("id", filter.value);
     if (filter?.field === "caption_request_id") query = query.eq("caption_request_id", filter.value);
 
     const { data, count } = await query

@@ -66,6 +66,7 @@ export default function LlmModelsTable({ navigateTo, filter, userId }: { navigat
       .from("llm_models")
       .select("id, name, llm_provider_id, provider_model_id, is_temperature_supported, created_datetime_utc", { count: "exact" });
 
+    if (filter?.field === "id") query = query.eq("id", filter.value);
     if (filter?.field === "llm_provider_id") query = query.eq("llm_provider_id", filter.value);
 
     const { data, count } = await query
