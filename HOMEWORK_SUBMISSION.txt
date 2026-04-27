@@ -11,8 +11,8 @@ VERCEL APPS (latest commit-specific URLs)
   (commit d63a521d642211f44e73f4e1b128be6471f5b293)
 
 - Admin Area:
-  https://humorpart1-admin-dmbyv6o0c-eshas-projects-a98d311b.vercel.app
-  (commit a567e7cde22d2e422b953aaa3e1c6928f438b678)
+  https://humorpart1-admin-5lz4rsq84-eshas-projects-a98d311b.vercel.app
+  (commit 2065547a60755bfa6f84131273397abfd52c3d1e)
 
 - Prompt Chain Tool:
   https://week-8-prompt-chain-tool-dh7itlpkf-eshas-projects-a98d311b.vercel.app
@@ -21,7 +21,7 @@ GitHub commits:
 - Caption Ranking App:
   https://github.com/ed3160/humorpart1/commit/d63a521d642211f44e73f4e1b128be6471f5b293
 - Admin Area:
-  https://github.com/ed3160/humorpart1-admin/commit/a567e7cde22d2e422b953aaa3e1c6928f438b678
+  https://github.com/ed3160/humorpart1-admin/commit/2065547a60755bfa6f84131273397abfd52c3d1e
 
 
 ------------------------------------------------------------------
@@ -482,7 +482,7 @@ ROOT
      └── 17g. Production build clean: `npm run build` →
               "Compiled successfully", 5/5 static pages, no
               type errors. Vercel deployment for commit
-              a567e7c reported "success" within ~30s of the
+              2065547 reported "success" within ~30s of the
               push. [build]
 
 
@@ -522,7 +522,7 @@ POST-TESTING WRITE-UP — Crackd Admin
 - Confirmed the production build is clean: `npm run build`
   compiled successfully (5/5 static pages, no TypeScript
   errors), and the Vercel deployment for commit
-  a567e7cde22d2e422b953aaa3e1c6928f438b678 returned "success"
+  2065547a60755bfa6f84131273397abfd52c3d1e returned "success"
   within ~30s of the push. The deployed URL serves HTTP 200
   with the LoginPage markup for an unauthenticated request.
 
@@ -563,7 +563,7 @@ POST-TESTING WRITE-UP — Crackd Admin
 
 - No regressions found across the runs that did execute. The
   app is demo-ready on the URL above; the latest deployed
-  commit (a567e7cde22d2e422b953aaa3e1c6928f438b678) matches
+  commit (2065547a60755bfa6f84131273397abfd52c3d1e) matches
   the code that is verified by curl smoke, direct database
   query, Vitest component tests, and source review.
 
